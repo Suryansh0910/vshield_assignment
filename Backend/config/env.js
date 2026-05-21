@@ -16,6 +16,7 @@ module.exports = {
   // Server
   PORT: process.env.PORT || 5000,
   NODE_ENV: process.env.NODE_ENV || "development",
+  FRONTEND_URL: process.env.FRONTEND_URL,
   
   // APIs
   AADHAAR_API_URL: process.env.AADHAAR_API_URL,

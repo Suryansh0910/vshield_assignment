@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5005/api',
+  baseURL: `${import.meta.env.VITE_API_URL || 'http://localhost:5005'}/api`,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ api.interceptors.response.use(
       try {
         // Attempt to refresh the token using the HTTP-only cookie
         const res = await axios.post(
-          'http://localhost:5005/api/auth/refresh',
+          `${import.meta.env.VITE_API_URL || 'http://localhost:5005'}/api/auth/refresh`,
           {},
           { withCredentials: true }
         );
