@@ -1,0 +1,311 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* High-End Minimalist Palette */
+  --bg-main: #F7F7F9; /* Very soft off-white/gray */
+  --bg-card: #FFFFFF;
+  --text-main: #0A0A0A;
+  --text-muted: #666666;
+  --border-light: #EBEBEB;
+  
+  /* Stark Accents */
+  --accent-black: #000000;
+  --accent-white: #FFFFFF;
+  
+  /* Status Colors (Subtle) */
+  --status-success: #0070F3; 
+  --status-error: #E00;
+  --status-pending: #F5A623;
+
+  /* Layout */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  
+  /* Shadows */
+  --shadow-subtle: 0 4px 24px -6px rgba(0,0,0,0.06);
+  --shadow-hover: 0 10px 32px -8px rgba(0,0,0,0.1);
+  
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --transition: all 0.25s ease;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Beautiful soft background for auth pages */
+.dot-bg {
+  background-color: var(--bg-main);
+  background-image: 
+    radial-gradient(var(--border-light) 1px, transparent 1px),
+    radial-gradient(var(--border-light) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+}
+
+a {
+  text-decoration: none;
+  color: var(--text-main);
+  font-weight: 500;
+  transition: var(--transition);
+}
+a:hover { color: var(--text-muted); }
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* --------------------
+   High-End Cards
+----------------------- */
+
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-subtle);
+  padding: 3rem;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 8px -2px rgba(0,0,0,0.03);
+  padding: 1.5rem;
+  transition: var(--transition);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+/* --------------------
+   Inputs
+----------------------- */
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.input-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.input {
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 1rem;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  transition: var(--transition);
+}
+
+.input:focus {
+  outline: none;
+  border-color: #000;
+  background-color: var(--bg-card);
+  box-shadow: 0 0 0 1px #000;
+}
+
+/* --------------------
+   Stark Buttons
+----------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 1.5rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: var(--transition);
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background-color: var(--accent-black);
+  color: var(--accent-white);
+  border: 1px solid var(--accent-black);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #222;
+  border-color: #222;
+  box-shadow: var(--shadow-hover);
+}
+
+.btn-outline {
+  border: 1px solid var(--border-light);
+  background-color: var(--bg-card);
+  color: var(--text-main);
+}
+
+.btn-outline:hover:not(:disabled) {
+  border-color: var(--accent-black);
+  background-color: var(--bg-main);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --------------------
+   App Layout
+----------------------- */
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 260px;
+  background-color: var(--bg-main);
+  border-right: 1px solid var(--border-light);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-weight: 500;
+  transition: var(--transition);
+  margin-bottom: 0.5rem;
+}
+.nav-link.active {
+  background-color: #EFEFEF;
+  color: var(--text-main);
+  font-weight: 600;
+}
+.nav-link:hover:not(.active) {
+  background-color: #F5F5F5;
+  color: var(--text-main);
+}
+
+.main-content {
+  flex: 1;
+  padding: 3rem;
+  overflow-y: auto;
+  background-color: var(--bg-card);
+}
+
+.page-title {
+  font-size: 2.25rem;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  color: var(--text-main);
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+}
+
+/* --------------------
+   Minimalist Data Display
+----------------------- */
+
+.stat-value {
+  font-size: 3.5rem;
+  font-weight: 300;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  color: var(--text-main);
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.75rem;
+}
+
+/* Clean Tables */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 1.25rem 1.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+}
+
+th {
+  background-color: var(--bg-main);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot-verified { background: var(--status-success); }
+.dot-failed { background: var(--status-error); }
+.dot-pending { background: var(--status-pending); }
+
+/* Helpers */
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }

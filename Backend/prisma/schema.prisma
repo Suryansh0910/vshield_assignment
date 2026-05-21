@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  verified      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  candidates    Candidate[]
+  sessions      Session[]
+  
+  @@map("users")
+}
+
+model Candidate {
+  id               String           @id @default(uuid())
+  fullName         String
+  email            String
+  phone            String
+  aadhaarNumber    String
+  panNumber        String
+  dob              DateTime
+  address          String
+  status           String           @default("PENDING")
+  reportUrl        String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  
+  createdById      String
+  createdBy        User             @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  
+  verificationLogs VerificationLog[]
+  
+  @@map("candidates")
+}
+
+model VerificationLog {
+  id                   String   @id @default(uuid())
+  candidateId          String
+  verificationType     String   // "AADHAAR" | "PAN"
+  requestPayload       Json
+  responsePayload      Json
+  verificationStatus   String   // "VERIFIED" | "FAILED" | "PENDING"
+  verifiedAt           DateTime @default(now())
+  
+  candidate            Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  
+  @@map("verification_logs")
+}
+
+model Session {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash String
+  ip               String
+  userAgent        String
+  revoked          Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("sessions")
+}
+
+
