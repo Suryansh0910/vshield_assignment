@@ -56,11 +56,13 @@ const getAllCandidates = async (req, res, next) => {
         { fullName: { contains: search, mode: "insensitive" } },
         { email: { contains: search, mode: "insensitive" } },
         { phone: { contains: search } },
+        { aadhaarNumber: { contains: search } },
+        { panNumber: { contains: search, mode: "insensitive" } },
       ];
     }
 
     if (status) {
-      const validStatuses = ["PENDING", "VERIFIED", "FAILED"];
+      const validStatuses = ["PENDING", "VERIFIED", "FAILED", "PARTIAL"];
       if (validStatuses.includes(status.toUpperCase())) {
         where.status = status.toUpperCase();
       }
@@ -224,10 +226,52 @@ const deleteCandidate = async (req, res, next) => {
   }
 };
 
+/**
+ * Get dashboard stats for the logged-in user
+ * GET /api/candidates/stats
+ */
+const getDashboardStats = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    const [total, verified, failed, pending, partial, recentCandidates] =
+      await Promise.all([
+        prisma.candidate.count({ where: { createdById: userId } }),
+        prisma.candidate.count({ where: { createdById: userId, status: "VERIFIED" } }),
+        prisma.candidate.count({ where: { createdById: userId, status: "FAILED" } }),
+        prisma.candidate.count({ where: { createdById: userId, status: "PENDING" } }),
+        prisma.candidate.count({ where: { createdById: userId, status: "PARTIAL" } }),
+        prisma.candidate.findMany({
+          where: { createdById: userId },
+          orderBy: { updatedAt: "desc" },
+          take: 5,
+          select: {
+            id: true,
+            fullName: true,
+            status: true,
+            updatedAt: true,
+          },
+        }),
+      ]);
+
+    res.status(200).json({
+      success: true,
+      message: "Dashboard stats retrieved successfully",
+      data: {
+        stats: { total, verified, failed, pending, partial },
+        recentActivity: recentCandidates,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createCandidate,
   getAllCandidates,
   getCandidateById,
   updateCandidate,
   deleteCandidate,
+  getDashboardStats,
 };

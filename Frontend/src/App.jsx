@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { useCandidateStore } from './store/candidateStore';
+
 import api from './api/axios';
 import { Shield, CheckCircle, Clock, AlertCircle, Users, MinusCircle } from 'lucide-react';
 
@@ -29,8 +30,7 @@ const StatRow = ({ icon, label, value, color }) => (
 );
 
 const SidebarStats = () => {
-  const { getStats } = useCandidateStore();
-  const stats = getStats();
+  const { stats } = useCandidateStore();
 
   return (
     <div style={{ marginTop: '1.5rem' }}>
@@ -51,12 +51,12 @@ const SidebarStats = () => {
 
 const Layout = () => {
   const { user, logout } = useAuthStore();
-  const { fetchCandidates } = useCandidateStore();
+  const { fetchCandidates, fetchStats } = useCandidateStore();
 
-  // Fetch globally so sidebar stats populate immediately
   useEffect(() => {
     fetchCandidates();
-  }, [fetchCandidates]);
+    fetchStats();
+  }, [fetchCandidates, fetchStats]);
 
   const handleLogout = async () => {
     try {
@@ -117,13 +117,15 @@ const PublicRoute = () => {
 };
 
 function App() {
-  const { setAuth, setLoading, logout } = useAuthStore();
+  const { setUser, setLoading, logout } = useAuthStore();
 
   useEffect(() => {
     const fetchMe = async () => {
       try {
         const res = await api.get('/auth/me');
-        setAuth(res.data.data.user, null);
+        // setUser preserves whatever access token is already in the store
+        // (set by the refresh interceptor during the 401 retry)
+        setUser(res.data.data.user);
       } catch (error) {
         logout();
       } finally {
@@ -131,7 +133,7 @@ function App() {
       }
     };
     fetchMe();
-  }, [setAuth, setLoading, logout]);
+  }, [setUser, setLoading, logout]);
 
   return (
     <Routes>

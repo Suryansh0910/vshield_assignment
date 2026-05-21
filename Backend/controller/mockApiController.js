@@ -18,6 +18,13 @@ const verifyAadhaar = async (req, res, next) => {
       });
     }
 
+    if (!/^\d{12}$/.test(aadhaarNumber)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Aadhaar number. Must be exactly 12 numeric digits.",
+      });
+    }
+
     // Mock logic: Even numbers pass, odd numbers fail
     const lastDigit = parseInt(aadhaarNumber.slice(-1));
     const status = lastDigit % 2 === 0 ? "VERIFIED" : "FAILED";
@@ -25,7 +32,9 @@ const verifyAadhaar = async (req, res, next) => {
     res.status(200).json({
       success: true,
       status,
-      message: `Aadhaar verification ${status}`,
+      nameMatch: status === "VERIFIED",
+      dobMatch: status === "VERIFIED",
+      message: `Aadhaar verification ${status === "VERIFIED" ? "successful" : "failed"}`,
       data: {
         aadhaarNumber,
         verifiedAt: new Date().toISOString(),
@@ -52,6 +61,13 @@ const verifyPAN = async (req, res, next) => {
       });
     }
 
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panNumber)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid PAN number. Format must be ABCDE1234F (5 letters, 4 digits, 1 letter).",
+      });
+    }
+
     // Mock logic: PANs starting with vowels pass, consonants fail
     const firstChar = panNumber.charAt(0);
     const vowels = ["A", "E", "I", "O", "U"];
@@ -60,7 +76,8 @@ const verifyPAN = async (req, res, next) => {
     res.status(200).json({
       success: true,
       status,
-      message: `PAN verification ${status}`,
+      panStatus: status === "VERIFIED" ? "active" : "inactive",
+      message: `PAN verification ${status === "VERIFIED" ? "successful" : "failed"}`,
       data: {
         panNumber,
         verifiedAt: new Date().toISOString(),

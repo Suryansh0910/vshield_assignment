@@ -4,25 +4,31 @@ export const useAuthStore = create((set) => ({
   user: null,
   accessToken: null,
   isAuthenticated: false,
-  isLoading: true, // initial load state
-  
-  setAuth: (user, accessToken) => set({ 
-    user, 
-    accessToken, 
+  isLoading: true,
+
+  setAuth: (user, accessToken) => set({
+    user,
+    accessToken,
     isAuthenticated: true,
-    isLoading: false
+    isLoading: false,
   }),
-  
-  setAccessToken: (accessToken) => set({ 
-    accessToken 
-  }),
-  
-  logout: () => set({ 
-    user: null, 
-    accessToken: null, 
+
+  // Update only the user without wiping the access token
+  setUser: (user) => set((state) => ({
+    user,
+    isAuthenticated: true,
+    isLoading: false,
+    accessToken: state.accessToken, // preserve whatever token is already stored
+  })),
+
+  setAccessToken: (accessToken) => set({ accessToken }),
+
+  logout: () => set({
+    user: null,
+    accessToken: null,
     isAuthenticated: false,
-    isLoading: false
+    isLoading: false,
   }),
-  
+
   setLoading: (isLoading) => set({ isLoading }),
 }));

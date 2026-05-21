@@ -199,7 +199,7 @@ const generateReportHTML = (candidate, verificationLogs) => {
 /**
  * Generate PDF from candidate data using PDFKit (no browser/Chromium needed)
  */
-const generatePDF = (candidate, verificationLogs) => {
+const generatePDF = (candidate, verificationLogs, verifiedBy = null) => {
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({ margin: 50, size: "A4" });
@@ -278,6 +278,9 @@ const generatePDF = (candidate, verificationLogs) => {
       drawSection("Report Metadata");
       drawRow("Generated On", new Date().toLocaleString());
       drawRow("Report ID", candidate.id);
+      if (verifiedBy) {
+        drawRow("Verified By", `${verifiedBy.name} (${verifiedBy.email})`);
+      }
 
       // ── Footer ──
       doc.fontSize(9).font("Helvetica").fillColor("#999999")
