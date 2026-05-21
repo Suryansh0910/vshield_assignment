@@ -38,10 +38,17 @@ const generateReport = async (req, res, next) => {
     const htmlContent = generateReportHTML(candidate, candidate.verificationLogs);
 
     // Generate PDF
-    const pdfBuffer = await generatePDF(htmlContent);
-
-    // TODO: Upload to S3/Cloudinary and store URL in database
-    // For now, we'll save it locally or send it directly
+    let pdfBuffer;
+    try {
+      pdfBuffer = await generatePDF(htmlContent);
+    } catch (pdfError) {
+      console.error("PDF Generation failed:", pdfError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to generate PDF report",
+        error: pdfError.message,
+      });
+    }
 
     // Save PDF URL in database (mock)
     const reportUrl = `/reports/${id}.pdf`;
@@ -50,12 +57,14 @@ const generateReport = async (req, res, next) => {
       data: { reportUrl },
     });
 
-    // Send PDF as response
+    // Send PDF as response with proper headers
     res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Length", pdfBuffer.length);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="verification_report_${candidate.fullName}.pdf"`
+      `inline; filename="verification_report_${candidate.fullName}.pdf"`
     );
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.send(pdfBuffer);
   } catch (error) {
     next(error);
@@ -103,14 +112,26 @@ const downloadReport = async (req, res, next) => {
     const htmlContent = generateReportHTML(candidate, candidate.verificationLogs);
 
     // Generate PDF
-    const pdfBuffer = await generatePDF(htmlContent);
+    let pdfBuffer;
+    try {
+      pdfBuffer = await generatePDF(htmlContent);
+    } catch (pdfError) {
+      console.error("PDF Generation failed:", pdfError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to generate PDF report",
+        error: pdfError.message,
+      });
+    }
 
-    // Send PDF as response
+    // Send PDF as response with proper headers
     res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Length", pdfBuffer.length);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="verification_report_${candidate.fullName}.pdf"`
+      `inline; filename="verification_report_${candidate.fullName}.pdf"`
     );
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     res.send(pdfBuffer);
   } catch (error) {
     next(error);

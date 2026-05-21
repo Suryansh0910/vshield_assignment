@@ -50,19 +50,38 @@ const CandidateDetail = () => {
   const downloadReport = async () => {
     setDownloading(true);
     try {
-      const res = await api.post(`/reports/${id}/generate`, {}, { responseType: 'blob' });
+      const res = await api.post(`/reports/${id}/generate`, {}, { 
+        responseType: 'blob',
+        headers: { 'Accept': 'application/pdf' }
+      });
+      
+      // Check if response is valid PDF
+      if (!res.data || res.data.size === 0) {
+        throw new Error('Empty PDF response received');
+      }
+      
+      if (res.data.type !== 'application/pdf' && res.data.type !== 'application/octet-stream') {
+        console.warn('Unexpected content type:', res.data.type);
+      }
       
       // Create a blob link to download
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const url = window.URL.createObjectURL(res.data);
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `verification_report_${candidate.fullName}.pdf`);
       document.body.appendChild(link);
       link.click();
-      link.remove();
+      
+      // Cleanup
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        link.remove();
+      }, 100);
+      
     } catch (err) {
-      alert('Failed to generate/download report');
-      console.error(err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to generate/download report';
+      alert(errorMessage);
+      console.error('PDF Download Error:', err);
     } finally {
       setDownloading(false);
     }
