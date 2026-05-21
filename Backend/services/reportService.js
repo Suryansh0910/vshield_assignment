@@ -1,4 +1,4 @@
-const puppeteer = require("puppeteer");
+const PDFDocument = require("pdfkit");
 const path = require("path");
 const fs = require("fs");
 const { maskAadhaar, maskPAN } = require("../utils/helpers");
@@ -149,40 +149,274 @@ const generateReportHTML = (candidate, verificationLogs) => {
   `;
 };
 
-const generatePDF = async (htmlContent, candidateId) => {
-  let browser;
-  try {
-    browser = await puppeteer.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
-    const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      margin: { top: "0px", right: "0px", bottom: "0px", left: "0px" },
-      printBackground: true,
+const getStatusColor = (status) => {
+  switch (status) {
+    case "VERIFIED": return "#10b981";
+    case "PARTIAL":  return "#f59e0b";
+    case "FAILED":   return "#ef4444";
+    default:         return "#6b7280";
+  }
+};
+
+const getStatusLabel = (status) => {
+  switch (status) {
+    case "VERIFIED": return "VERIFIED";
+    case "PARTIAL":  return "PARTIAL";
+    case "FAILED":   return "FAILED";
+    default:         return "PENDING";
+  }
+};
+
+const generatePDF = async (candidate, verificationLogs) => {
+  const pdfBuffer = await new Promise((resolve, reject) => {
+    const doc = new PDFDocument({
+      size: "A4",
+      margins: { top: 40, bottom: 40, left: 40, right: 40 }
     });
 
-    const fileName = `report_${candidateId}_${Date.now()}.pdf`;
-    let reportUrl;
-    let filePath;
+    const buffers = [];
+    doc.on("data", buffers.push.bind(buffers));
+    doc.on("end", () => resolve(Buffer.concat(buffers)));
+    doc.on("error", reject);
 
-    try {
-      
-      const { uploadToS3 } = require("../utils/aws");
-      reportUrl = await uploadToS3(pdfBuffer, fileName);
-    } catch (s3Error) {
-      console.warn("Failed to upload to S3, saving locally fallback:", s3Error.message);
-      
-      filePath = path.join(REPORTS_DIR, fileName);
-      fs.writeFileSync(filePath, pdfBuffer);
-      reportUrl = `/reports/${fileName}`;
+    // Watermark
+    doc.save()
+       .fillColor("#e5e7eb")
+       .opacity(0.15)
+       .fontSize(80)
+       .rotate(-30, { origin: [300, 420] })
+       .text("vShield", 150, 400, { align: "center" })
+       .restore();
+
+    // Header
+    doc.fillColor("#1e40af")
+       .fontSize(20)
+       .font("Helvetica-Bold")
+       .text("BACKGROUND VERIFICATION REPORT", 40, 40);
+
+    doc.fillColor("#6b7280")
+       .fontSize(10)
+       .font("Helvetica")
+       .text("Confidential — For Internal Use Only", 40, 65);
+
+    const reportIdStr = `Report ID: ${candidate.id.slice(0, 8).toUpperCase()}`;
+    doc.fillColor("#9ca3af")
+       .fontSize(10)
+       .font("Courier")
+       .text(reportIdStr, 400, 40, { align: "right" });
+
+    const statusLabel = getStatusLabel(candidate.status);
+    const statusColor = getStatusColor(candidate.status);
+
+    doc.save()
+       .fillColor(statusColor)
+       .roundedRect(440, 58, 115, 22, 4)
+       .fill()
+       .restore();
+
+    doc.fillColor("#ffffff")
+       .fontSize(9)
+       .font("Helvetica-Bold")
+       .text(statusLabel, 440, 65, { width: 115, align: "center" });
+
+    doc.strokeColor("#1e40af")
+       .lineWidth(3)
+       .moveTo(40, 95)
+       .lineTo(555, 95)
+       .stroke();
+
+    // Candidate Info Section
+    let y = 120;
+    doc.fillColor("#6b7280")
+       .fontSize(10)
+       .font("Helvetica-Bold")
+       .text("CANDIDATE INFORMATION", 40, y);
+
+    doc.strokeColor("#e5e7eb")
+       .lineWidth(1)
+       .moveTo(40, y + 15)
+       .lineTo(555, y + 15)
+       .stroke();
+
+    y += 25;
+
+    const drawGridItem = (label, value, x, y, width) => {
+      doc.fillColor("#9ca3af")
+         .fontSize(8)
+         .font("Helvetica-Bold")
+         .text(label.toUpperCase(), x, y);
+      doc.fillColor("#111827")
+         .fontSize(10)
+         .font("Helvetica")
+         .text(value || "N/A", x, y + 12, { width: width });
+    };
+
+    drawGridItem("Full Name", candidate.fullName, 40, y, 240);
+    drawGridItem("Date of Birth", new Date(candidate.dob).toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" }), 300, y, 240);
+
+    y += 35;
+    drawGridItem("Email Address", candidate.email, 40, y, 240);
+    drawGridItem("Phone Number", `+91 ${candidate.phone}`, 300, y, 240);
+
+    y += 35;
+    drawGridItem("Address", candidate.address, 40, y, 500);
+
+    y += 55;
+
+    // Verification Checks Section
+    doc.fillColor("#6b7280")
+       .fontSize(10)
+       .font("Helvetica-Bold")
+       .text("IDENTITY VERIFICATION CHECKS", 40, y);
+
+    doc.strokeColor("#e5e7eb")
+       .lineWidth(1)
+       .moveTo(40, y + 15)
+       .lineTo(555, y + 15)
+       .stroke();
+
+    y += 25;
+
+    const sortedLogs = [...verificationLogs].sort(
+      (a, b) => new Date(b.verifiedAt) - new Date(a.verifiedAt)
+    );
+
+    const aadhaarLog = sortedLogs.find((log) => log.verificationType === "AADHAAR");
+    const panLog = sortedLogs.find((log) => log.verificationType === "PAN");
+
+    const aadhaarStatus = aadhaarLog?.verificationStatus || "PENDING";
+    const panStatus = panLog?.verificationStatus || "PENDING";
+
+    // Aadhaar box
+    doc.save()
+       .strokeColor("#e5e7eb")
+       .lineWidth(1)
+       .roundedRect(40, y, 245, 95, 6)
+       .stroke()
+       .restore();
+
+    doc.fillColor("#4b5563")
+       .fontSize(10)
+       .font("Helvetica-Bold")
+       .text("AADHAAR VERIFICATION", 55, y + 15);
+
+    doc.fillColor(getStatusColor(aadhaarStatus))
+       .fontSize(12)
+       .font("Helvetica-Bold")
+       .text(getStatusLabel(aadhaarStatus), 55, y + 30);
+
+    doc.fillColor("#6b7280")
+       .fontSize(9)
+       .font("Helvetica")
+       .text(`Aadhaar: ${maskAadhaar(candidate.aadhaarNumber)}`, 55, y + 50);
+
+    if (aadhaarLog) {
+      doc.text(`Checked: ${new Date(aadhaarLog.verifiedAt).toLocaleString("en-IN")}`, 55, y + 65, { width: 220 });
     }
 
-    return { pdfBuffer, filePath, reportUrl };
-  } finally {
-    if (browser) await browser.close();
+    // PAN box
+    doc.save()
+       .strokeColor("#e5e7eb")
+       .lineWidth(1)
+       .roundedRect(305, y, 250, 95, 6)
+       .stroke()
+       .restore();
+
+    doc.fillColor("#4b5563")
+       .fontSize(10)
+       .font("Helvetica-Bold")
+       .text("PAN VERIFICATION", 320, y + 15);
+
+    doc.fillColor(getStatusColor(panStatus))
+       .fontSize(12)
+       .font("Helvetica-Bold")
+       .text(getStatusLabel(panStatus), 320, y + 30);
+
+    doc.fillColor("#6b7280")
+       .fontSize(9)
+       .font("Helvetica")
+       .text(`PAN: ${maskPAN(candidate.panNumber)}`, 320, y + 50);
+
+    if (panLog) {
+      doc.text(`Checked: ${new Date(panLog.verifiedAt).toLocaleString("en-IN")}`, 320, y + 65, { width: 220 });
+    }
+
+    y += 115;
+
+    // Report Metadata Section
+    doc.fillColor("#6b7280")
+       .fontSize(10)
+       .font("Helvetica-Bold")
+       .text("REPORT METADATA", 40, y);
+
+    doc.strokeColor("#e5e7eb")
+       .lineWidth(1)
+       .moveTo(40, y + 15)
+       .lineTo(555, y + 15)
+       .stroke();
+
+    y += 25;
+
+    drawGridItem("Generated On", new Date().toLocaleString("en-IN", { dateStyle: "long", timeStyle: "short" }), 40, y, 240);
+    drawGridItem("Verification Engine", "vShield BGV Platform v1.0", 300, y, 240);
+
+    y += 35;
+    drawGridItem("Overall Status", candidate.status, 40, y, 240);
+    doc.fillColor(getStatusColor(candidate.status))
+       .fontSize(10)
+       .font("Helvetica-Bold")
+       .text(candidate.status, 40, y + 12);
+
+    drawGridItem("Candidate ID", candidate.id, 300, y, 240);
+    doc.fillColor("#111827")
+       .fontSize(8)
+       .font("Courier")
+       .text(candidate.id, 300, y + 12);
+
+    // Footer
+    const footerY = 720;
+    doc.strokeColor("#e5e7eb")
+       .lineWidth(1)
+       .moveTo(40, footerY)
+       .lineTo(555, footerY)
+       .stroke();
+
+    doc.fillColor("#9ca3af")
+       .fontSize(8)
+       .font("Helvetica")
+       .text("This is a system-generated report. Any discrepancies should be reported to compliance@vshield.io", 40, footerY + 15, { width: 320 });
+
+    doc.save()
+       .strokeColor("#d1d5db")
+       .lineWidth(1)
+       .dash(4, { space: 2 })
+       .roundedRect(385, footerY + 10, 170, 50, 4)
+       .stroke()
+       .restore();
+
+    doc.fillColor("#9ca3af")
+       .fontSize(8)
+       .font("Helvetica")
+       .text("Authorized Signatory", 385, footerY + 48, { width: 170, align: "center" });
+
+    doc.end();
+  });
+
+  const fileName = `report_${candidate.id}_${Date.now()}.pdf`;
+  let reportUrl;
+  let filePath;
+
+  try {
+    const { uploadToS3 } = require("../utils/aws");
+    reportUrl = await uploadToS3(pdfBuffer, fileName);
+  } catch (s3Error) {
+    console.warn("Failed to upload to S3, saving locally fallback:", s3Error.message);
+    filePath = path.join(REPORTS_DIR, fileName);
+    fs.writeFileSync(filePath, pdfBuffer);
+    reportUrl = `/reports/${fileName}`;
   }
+
+  return { pdfBuffer, filePath, reportUrl };
 };
 
 module.exports = {

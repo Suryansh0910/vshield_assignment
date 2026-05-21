@@ -30,8 +30,7 @@ const generateReport = async (req, res, next) => {
       });
     }
 
-    const htmlContent = generateReportHTML(candidate, candidate.verificationLogs);
-    const { pdfBuffer, reportUrl } = await generatePDF(htmlContent, candidate.id);
+    const { pdfBuffer, reportUrl } = await generatePDF(candidate, candidate.verificationLogs);
 
     
     await prisma.candidate.update({
@@ -95,8 +94,7 @@ const downloadReport = async (req, res, next) => {
         });
       }
       
-      const htmlContent = generateReportHTML(candidate, candidate.verificationLogs);
-      const result = await generatePDF(htmlContent, candidate.id);
+      const result = await generatePDF(candidate, candidate.verificationLogs);
       
       if (result.reportUrl.startsWith("http")) {
           await prisma.candidate.update({ where: { id }, data: { reportUrl: result.reportUrl } });
