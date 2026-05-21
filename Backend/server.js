@@ -21,24 +21,11 @@ app.set("trust proxy", 1);
 // ============ MIDDLEWARE ============
 
 // CORS - Must be before helmet
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  // Support comma-separated list: FRONTEND_URL=https://a.vercel.app,https://preview.vercel.app
-  ...(process.env.FRONTEND_URL
-    ? process.env.FRONTEND_URL.split(",").map((u) => u.trim())
-    : []),
-];
-
+// Reflect the request origin back so any Vercel preview URL, localhost port,
+// or custom domain works without re-configuring env vars each deploy.
+// Credentials still require an explicit origin (not *), so reflecting is safe here.
 const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (server-to-server, curl, Postman)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    // Return false instead of an Error so CORS headers are still absent
-    // (browser will show a CORS error, not a server crash)
-    callback(null, false);
-  },
+  origin: (origin, callback) => callback(null, origin || true),
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
