@@ -1,8 +1,5 @@
 const prisma = require("../config/database");
-const {
-  generateReportHTML,
-  generatePDF,
-} = require("../services/reportService");
+const { generatePDF } = require("../services/reportService");
 
 /**
  * Generate report PDF for a candidate
@@ -34,13 +31,10 @@ const generateReport = async (req, res, next) => {
       });
     }
 
-    // Generate HTML
-    const htmlContent = generateReportHTML(candidate, candidate.verificationLogs);
-
     // Generate PDF
     let pdfBuffer;
     try {
-      pdfBuffer = await generatePDF(htmlContent);
+      pdfBuffer = await generatePDF(candidate, candidate.verificationLogs);
     } catch (pdfError) {
       console.error("PDF Generation failed:", pdfError);
       return res.status(500).json({
@@ -108,13 +102,10 @@ const downloadReport = async (req, res, next) => {
       });
     }
 
-    // Generate HTML
-    const htmlContent = generateReportHTML(candidate, candidate.verificationLogs);
-
     // Generate PDF
     let pdfBuffer;
     try {
-      pdfBuffer = await generatePDF(htmlContent);
+      pdfBuffer = await generatePDF(candidate, candidate.verificationLogs);
     } catch (pdfError) {
       console.error("PDF Generation failed:", pdfError);
       return res.status(500).json({
