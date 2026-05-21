@@ -15,6 +15,7 @@ const reportRoutes = require("./routes/reportRoutes");
 const mockApiRoutes = require("./routes/mockApiRoutes");
 
 const app = express();
+app.set("trust proxy", 1);
 
 
 
