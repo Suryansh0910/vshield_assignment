@@ -1,44 +1,39 @@
-const axios = require("axios");
-const env = require("../config/env");
-
 /**
  * Verification Service - Contains business logic for verification
  */
 
 /**
- * Call Aadhaar verification API
+ * Mock Aadhaar verification logic (even last digit = VERIFIED)
  */
 const verifyAadhaarNumber = async (aadhaarNumber) => {
-  try {
-    const response = await axios.post(env.AADHAAR_API_URL, {
-      aadhaarNumber,
-    });
-    return response.data;
-  } catch (error) {
-    return {
-      success: false,
-      status: "FAILED",
-      error: error.message,
-    };
+  if (!aadhaarNumber) {
+    return { success: false, status: "FAILED", error: "Aadhaar number is required" };
   }
+  const lastDigit = parseInt(aadhaarNumber.slice(-1));
+  const status = lastDigit % 2 === 0 ? "VERIFIED" : "FAILED";
+  return {
+    success: true,
+    status,
+    message: `Aadhaar verification ${status}`,
+    data: { aadhaarNumber, verifiedAt: new Date().toISOString(), verificationType: "AADHAAR" },
+  };
 };
 
 /**
- * Call PAN verification API
+ * Mock PAN verification logic (vowel first char = VERIFIED)
  */
 const verifyPANNumber = async (panNumber) => {
-  try {
-    const response = await axios.post(env.PAN_API_URL, {
-      panNumber,
-    });
-    return response.data;
-  } catch (error) {
-    return {
-      success: false,
-      status: "FAILED",
-      error: error.message,
-    };
+  if (!panNumber) {
+    return { success: false, status: "FAILED", error: "PAN number is required" };
   }
+  const firstChar = panNumber.charAt(0).toUpperCase();
+  const status = ["A", "E", "I", "O", "U"].includes(firstChar) ? "VERIFIED" : "FAILED";
+  return {
+    success: true,
+    status,
+    message: `PAN verification ${status}`,
+    data: { panNumber, verifiedAt: new Date().toISOString(), verificationType: "PAN" },
+  };
 };
 
 /**

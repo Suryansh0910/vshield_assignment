@@ -15,30 +15,38 @@ const mockApiRoutes = require("./routes/mockApiRoutes");
 
 const app = express();
 
+// Trust Render/proxy's X-Forwarded-For so rate limiters use the real client IP
+app.set("trust proxy", 1);
+
 // ============ MIDDLEWARE ============
 
 // CORS - Must be before helmet
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
-  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+  // Support comma-separated list: FRONTEND_URL=https://a.vercel.app,https://preview.vercel.app
+  ...(process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(",").map((u) => u.trim())
+    : []),
 ];
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, Postman)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      callback(new Error(`CORS: origin ${origin} not allowed`));
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    exposedHeaders: ["Content-Type", "Authorization"],
-    optionsSuccessStatus: 200,
-  })
-);
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (server-to-server, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Return false instead of an Error so CORS headers are still absent
+    // (browser will show a CORS error, not a server crash)
+    callback(null, false);
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 
 // Security middleware - After CORS
 app.use(helmet({
@@ -52,30 +60,25 @@ app.use(cookieParser());
 
 // Rate limiting
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === "development" ? 1000 : 10, // Higher limit for local development testing
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === "development" ? 1000 : 100,
   message: "Too many authentication attempts, please try again later",
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 const verificationLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: process.env.NODE_ENV === "development" ? 1000 : 5, // Higher limit for local development testing
+  windowMs: 60 * 60 * 1000,
+  max: process.env.NODE_ENV === "development" ? 1000 : 50,
   message: "Too many verification requests, please try again later",
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 // ============ ROUTES ============
 
-// Preflight handler
-app.options("*", cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error(`CORS: origin ${origin} not allowed`));
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 200,
-}));
+// Preflight handler — reuse the same options so allowed origins stay in sync
+app.options("*", cors(corsOptions));
 
 // Health check
 app.get("/health", (req, res) => {
