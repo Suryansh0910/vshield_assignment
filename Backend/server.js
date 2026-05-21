@@ -17,16 +17,22 @@ const app = express();
 
 // ============ MIDDLEWARE ============
 
-// Security middleware
-app.use(helmet());
-
-// CORS
+// CORS - Must be before helmet
 app.use(
   cors({
     origin: ["http://localhost:5173", "http://localhost:3000"],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 200,
   })
 );
+
+// Security middleware - After CORS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
 
 // Body parser & Cookies
 app.use(express.json());
@@ -47,6 +53,15 @@ const verificationLimiter = rateLimit({
 });
 
 // ============ ROUTES ============
+
+// Preflight handler
+app.options("*", cors({
+  origin: ["http://localhost:5173", "http://localhost:3000"],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 200,
+}));
 
 // Health check
 app.get("/health", (req, res) => {

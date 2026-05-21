@@ -6,6 +6,14 @@
 const errorHandler = (err, req, res, next) => {
   console.error("Error:", err);
 
+  // Ensure CORS headers are set on error responses
+  if (!res.headersSent) {
+    res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  }
+
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
 

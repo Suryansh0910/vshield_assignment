@@ -5,7 +5,8 @@ const api = axios.create({
   baseURL: 'http://localhost:5005/api',
   withCredentials: true,
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
   }
 });
 
@@ -16,7 +17,7 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   // Don't override Content-Type for blob requests
-  if (config.responseType !== 'blob' && !config.headers['Content-Type']) {
+  if (config.responseType !== 'blob') {
     config.headers['Content-Type'] = 'application/json';
   }
   return config;
