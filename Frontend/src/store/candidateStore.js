@@ -23,6 +23,7 @@ export const useCandidateStore = create((set, get) => ({
     return {
       total: candidates.length,
       verified: candidates.filter(c => c.status === 'VERIFIED').length,
+      partial: candidates.filter(c => c.status === 'PARTIAL').length,
       pending: candidates.filter(c => c.status === 'PENDING').length,
       failed: candidates.filter(c => c.status === 'FAILED').length,
     };

@@ -1,8 +1,123 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Loader2 } from 'lucide-react';
 import AddCandidateModal from '../components/AddCandidateModal';
 import { useCandidateStore } from '../store/candidateStore';
+
+const COLUMNS = [
+  {
+    title: 'Not Reviewed',
+    status: 'PENDING',
+    color: '#6366F1',
+    bgColor: '#EEF2FF',
+    dotClass: 'dot-pending',
+  },
+  {
+    title: 'Partial',
+    status: 'PARTIAL',
+    color: '#D97706',
+    bgColor: '#FFFBEB',
+    dotClass: 'dot-partial',
+  },
+  {
+    title: 'Accepted',
+    status: 'VERIFIED',
+    color: '#059669',
+    bgColor: '#ECFDF5',
+    dotClass: 'dot-verified',
+  },
+  {
+    title: 'Rejected',
+    status: 'FAILED',
+    color: '#DC2626',
+    bgColor: '#FEF2F2',
+    dotClass: 'dot-failed',
+  },
+];
+
+const CandidateCard = ({ cand, accentColor, navigate }) => (
+  <div
+    className="card"
+    style={{ padding: '1rem', cursor: 'pointer' }}
+    onClick={() => navigate(`/candidate/${cand.id}`)}
+  >
+    <div style={{ fontWeight: '600', color: 'var(--text-main)', marginBottom: '0.375rem', fontSize: '0.9rem' }}>
+      {cand.fullName}
+    </div>
+    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+      {cand.email}
+    </div>
+    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.875rem' }}>
+      +91 {cand.phone}
+    </div>
+    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span>Added: {new Date(cand.createdAt).toLocaleDateString()}</span>
+      <span style={{ color: accentColor, fontWeight: '600', fontSize: '0.8rem' }}>View &rarr;</span>
+    </div>
+  </div>
+);
+
+const Column = ({ title, status, color, bgColor, candidates, navigate }) => {
+  const columnCandidates = candidates.filter(c => c.status === status);
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: '220px' }}>
+      {/* Column header */}
+      <div style={{
+        backgroundColor: bgColor,
+        border: `1px solid ${color}30`,
+        color: color,
+        padding: '0.75rem 1rem',
+        borderRadius: 'var(--radius-sm)',
+        fontWeight: '700',
+        fontSize: '0.85rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '0.75rem',
+        letterSpacing: '0.02em',
+        textTransform: 'uppercase',
+      }}>
+        <span>{title}</span>
+        <span style={{
+          backgroundColor: color,
+          color: '#fff',
+          padding: '0.125rem 0.5rem',
+          borderRadius: '999px',
+          fontSize: '0.7rem',
+          fontWeight: '700',
+          minWidth: '20px',
+          textAlign: 'center',
+        }}>
+          {columnCandidates.length}
+        </span>
+      </div>
+
+      {/* Cards */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.75rem',
+        flex: 1,
+        backgroundColor: 'var(--bg-main)',
+        padding: '0.75rem',
+        borderRadius: 'var(--radius-md)',
+        border: '1px solid var(--border-light)',
+        minHeight: '200px',
+      }}>
+        {columnCandidates.length === 0 ? (
+          <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '2rem', lineHeight: 1.5 }}>
+            No candidates<br />in this pipeline.
+          </div>
+        ) : (
+          columnCandidates.map((cand) => (
+            <CandidateCard key={cand.id} cand={cand} accentColor={color} navigate={navigate} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
 
 const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -11,76 +126,9 @@ const Dashboard = () => {
 
   const { candidates, loading, fetchCandidates } = useCandidateStore();
 
-  // On mount, candidates are already fetched by App.jsx, but we can refetch if needed
-  // We'll just rely on the global state and a local refetch when searching
   const handleSearch = (e) => {
     e.preventDefault();
     fetchCandidates(searchTerm);
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'VERIFIED': return 'var(--status-success)';
-      case 'FAILED': return 'var(--status-error)';
-      default: return 'var(--status-pending)';
-    }
-  };
-
-  const Column = ({ title, status, accentColor }) => {
-    const columnCandidates = candidates.filter(c => c.status === status);
-    
-    return (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: '300px' }}>
-        {/* Solid Color Header per requirement */}
-        <div style={{ 
-          backgroundColor: accentColor, 
-          color: '#fff', 
-          padding: '1rem', 
-          borderRadius: 'var(--radius-sm)',
-          fontWeight: '600',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <span>{title}</span>
-          <span style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '0.125rem 0.5rem', borderRadius: '999px', fontSize: '0.75rem' }}>
-            {columnCandidates.length}
-          </span>
-        </div>
-
-        {/* Candidate Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, backgroundColor: 'var(--bg-main)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-          {columnCandidates.length === 0 ? (
-            <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '2rem' }}>
-              No candidates in this pipeline.
-            </div>
-          ) : (
-            columnCandidates.map((cand) => (
-              <div 
-                key={cand.id} 
-                className="card" 
-                style={{ padding: '1rem', cursor: 'pointer' }}
-                onClick={() => navigate(`/candidate/${cand.id}`)}
-              >
-                <div style={{ fontWeight: '600', color: 'var(--text-main)', marginBottom: '0.5rem' }}>
-                  {cand.fullName}
-                </div>
-                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
-                  {cand.email}
-                </div>
-                <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                  +91 {cand.phone}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Added: {new Date(cand.createdAt).toLocaleDateString()}</span>
-                  <span style={{ color: accentColor, fontWeight: '600' }}>View &rarr;</span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    );
   };
 
   return (
@@ -89,46 +137,56 @@ const Dashboard = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
         <div>
           <h1 className="page-title">Candidate Pipeline</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Visualize and track verification status instantly.</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Visualize and track verification status instantly.</p>
         </div>
-        
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem', width: '250px' }}>
-            <div style={{ position: 'relative', width: '100%' }}>
-              <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)' }} />
+
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ position: 'relative' }}>
+              <Search size={15} color="var(--text-muted)" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
               <input
                 type="text"
                 className="input"
-                placeholder="Search..."
-                style={{ paddingLeft: '2.5rem', width: '100%' }}
+                placeholder="Search candidates..."
+                style={{ paddingLeft: '2.25rem', width: '220px', fontSize: '0.875rem' }}
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  if (e.target.value === '') fetchCandidates('');
+                }}
               />
             </div>
           </form>
           <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
-            <Plus size={18} /> Add Candidate
+            <Plus size={16} /> Add Candidate
           </button>
         </div>
       </div>
 
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '5rem', flex: 1 }}>
-          <Loader2 className="spin" size={32} color="var(--accent-black)" />
+          <Loader2 className="spin" size={28} color="var(--brand-color)" />
         </div>
       ) : (
-        /* 3-Column Kanban Layout */
-        <div style={{ display: 'flex', gap: '1.5rem', flex: 1, overflowX: 'auto', paddingBottom: '1rem' }}>
-          <Column title="Accepted" status="VERIFIED" accentColor="var(--status-success)" />
-          <Column title="Partial" status="PENDING" accentColor="var(--status-pending)" />
-          <Column title="Rejected" status="FAILED" accentColor="var(--status-error)" />
+        <div style={{ display: 'flex', gap: '1rem', flex: 1, overflowX: 'auto', paddingBottom: '1rem', alignItems: 'flex-start' }}>
+          {COLUMNS.map((col) => (
+            <Column
+              key={col.status}
+              title={col.title}
+              status={col.status}
+              color={col.color}
+              bgColor={col.bgColor}
+              candidates={candidates}
+              navigate={navigate}
+            />
+          ))}
         </div>
       )}
 
-      <AddCandidateModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        onSuccess={() => fetchCandidates(searchTerm)} 
+      <AddCandidateModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={() => fetchCandidates(searchTerm)}
       />
     </div>
   );

@@ -3,49 +3,47 @@ import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
 import { useCandidateStore } from './store/candidateStore';
 import api from './api/axios';
-import { Shield, CheckCircle, Clock, AlertCircle, Users } from 'lucide-react';
+import { Shield, CheckCircle, Clock, AlertCircle, Users, MinusCircle } from 'lucide-react';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import CandidateDetail from './pages/CandidateDetail';
 
+const StatRow = ({ icon, label, value, color }) => (
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.375rem 0' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+      {icon}
+      {label}
+    </div>
+    <span style={{
+      fontWeight: '700',
+      fontSize: '0.85rem',
+      color: value > 0 ? color : 'var(--text-muted)',
+      minWidth: '20px',
+      textAlign: 'right',
+    }}>
+      {value}
+    </span>
+  </div>
+);
+
 const SidebarStats = () => {
   const { getStats } = useCandidateStore();
   const stats = getStats();
 
   return (
-    <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <h3 style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', fontWeight: '600', marginBottom: '0.5rem' }}>
+    <div style={{ marginTop: '1.5rem' }}>
+      <h3 style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontWeight: '700', marginBottom: '0.75rem' }}>
         Live Overview
       </h3>
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', fontSize: '0.875rem' }}>
-          <Users size={16} color="var(--text-muted)" /> Total
-        </div>
-        <div style={{ fontWeight: '600' }}>{stats.total}</div>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', fontSize: '0.875rem' }}>
-          <CheckCircle size={16} color="var(--status-success)" /> Accepted
-        </div>
-        <div style={{ fontWeight: '600' }}>{stats.verified}</div>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', fontSize: '0.875rem' }}>
-          <Clock size={16} color="var(--status-pending)" /> Partial
-        </div>
-        <div style={{ fontWeight: '600' }}>{stats.pending}</div>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', fontSize: '0.875rem' }}>
-          <AlertCircle size={16} color="var(--status-error)" /> Rejected
-        </div>
-        <div style={{ fontWeight: '600' }}>{stats.failed}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
+        <StatRow icon={<Users size={14} />} label="Total" value={stats.total} color="var(--text-main)" />
+        <div style={{ height: '1px', backgroundColor: 'var(--border-light)', margin: '0.375rem 0' }} />
+        <StatRow icon={<MinusCircle size={14} color="var(--status-pending)" />} label="Not Reviewed" value={stats.pending} color="var(--status-pending)" />
+        <StatRow icon={<Clock size={14} color="var(--status-partial)" />} label="Partial" value={stats.partial} color="var(--status-partial)" />
+        <StatRow icon={<CheckCircle size={14} color="var(--status-success)" />} label="Accepted" value={stats.verified} color="var(--status-success)" />
+        <StatRow icon={<AlertCircle size={14} color="var(--status-error)" />} label="Rejected" value={stats.failed} color="var(--status-error)" />
       </div>
     </div>
   );
@@ -73,9 +71,11 @@ const Layout = () => {
   return (
     <div className="app-layout">
       <aside className="sidebar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '3rem' }}>
-          <Shield size={24} color="var(--accent-black)" />
-          <h2 style={{ fontSize: '1.25rem', fontWeight: '700', letterSpacing: '-0.04em' }}>vShield</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: 'var(--brand-color)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Shield size={18} color="#fff" />
+          </div>
+          <h2 style={{ fontSize: '1.15rem', fontWeight: '700', letterSpacing: '-0.03em' }}>vShield</h2>
         </div>
         
         <nav style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>

@@ -176,12 +176,10 @@ const CandidateDetail = () => {
                     <td>{new Date(log.verifiedAt).toLocaleString()}</td>
                     <td>{log.verificationType}</td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        {log.verificationStatus === 'VERIFIED' ? <CheckCircle size={14} color="var(--success-text)" /> : <AlertCircle size={14} color="var(--error-text)" />}
-                        <span style={{ fontWeight: '500', color: log.verificationStatus === 'VERIFIED' ? 'var(--success-text)' : 'var(--error-text)' }}>
-                          {log.verificationStatus}
-                        </span>
-                      </div>
+                      <span className={`status-badge status-${log.verificationStatus.toLowerCase()}`}>
+                        <span className={`status-dot dot-${log.verificationStatus.toLowerCase()}`} />
+                        {log.verificationStatus}
+                      </span>
                     </td>
                     <td>
                       <pre style={{ fontSize: '0.75rem', backgroundColor: 'var(--bg-primary)', padding: '0.5rem', borderRadius: '4px', overflowX: 'auto', margin: 0 }}>
