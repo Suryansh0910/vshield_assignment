@@ -1,0 +1,162 @@
+{
+  "info": {
+    "name": "vShield BGV API",
+    "description": "Background Verification Platform — Complete API collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5005", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "candidateId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@vshield.com\",\n  \"password\": \"password123\"\n}" }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [{ "listen": "test", "script": { "exec": ["const r = pm.response.json();", "if (r.data?.accessToken) pm.collectionVariables.set('accessToken', r.data.accessToken);"] } }],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@vshield.com\",\n  \"password\": \"admin123\"\n}" }
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/api/auth/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/auth/refresh" }
+        },
+        {
+          "name": "Logout",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/auth/logout" }
+        }
+      ]
+    },
+    {
+      "name": "Candidates",
+      "item": [
+        {
+          "name": "Create Candidate",
+          "event": [{ "listen": "test", "script": { "exec": ["const r = pm.response.json();", "if (r.data?.id) pm.collectionVariables.set('candidateId', r.data.id);"] } }],
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/candidates",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"fullName\": \"Ananya Krishnan\",\n  \"email\": \"ananya.k@example.com\",\n  \"phone\": \"9876543210\",\n  \"aadhaarNumber\": \"456712341234\",\n  \"panNumber\": \"ABCDE1234F\",\n  \"dob\": \"1995-06-15\",\n  \"address\": \"101, Jubilee Hills, Hyderabad, TS\"\n}" }
+          }
+        },
+        {
+          "name": "List Candidates",
+          "request": {
+            "method": "GET", "url": { "raw": "{{baseUrl}}/api/candidates?page=1&limit=10", "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "10" }, { "key": "search", "value": "" }, { "key": "status", "value": "" }] },
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Get Candidate by ID",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/api/candidates/{{candidateId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Update Candidate",
+          "request": {
+            "method": "PUT", "url": "{{baseUrl}}/api/candidates/{{candidateId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }, { "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"address\": \"202, Banjara Hills, Hyderabad, TS\"\n}" }
+          }
+        },
+        {
+          "name": "Delete Candidate",
+          "request": {
+            "method": "DELETE", "url": "{{baseUrl}}/api/candidates/{{candidateId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Verification",
+      "item": [
+        {
+          "name": "Start Verification",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/verifications/{{candidateId}}/start",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Get Verification Logs",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/api/verifications/{{candidateId}}/logs",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Generate Report (PDF)",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/api/reports/{{candidateId}}/generate",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        },
+        {
+          "name": "Download Report",
+          "request": {
+            "method": "GET", "url": "{{baseUrl}}/api/reports/{{candidateId}}/download",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mock APIs",
+      "item": [
+        {
+          "name": "Mock Aadhaar Verify",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/mock-api/aadhaar/verify",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"aadhaarNumber\": \"123412341234\"\n}" }
+          }
+        },
+        {
+          "name": "Mock PAN Verify",
+          "request": {
+            "method": "POST", "url": "{{baseUrl}}/mock-api/pan/verify",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"panNumber\": \"ABCDE1234F\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health",
+          "request": { "method": "GET", "url": "{{baseUrl}}/health" }
+        }
+      ]
+    }
+  ]
+}
